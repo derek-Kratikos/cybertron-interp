@@ -1,0 +1,5 @@
+torch>=2.0.0
+transformers>=4.30.0
+circuitsvis>=1.41.0
+seaborn>=0.13.0
+matplotlib>=3.7.0
