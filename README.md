@@ -125,10 +125,13 @@ Cybertron-Interp/
     ├── logit\_lens.py        \# Residual stream decoding & token attribution
 
     └── intervention.py      \# Activation patching & steering vectors
-
-However, to make it more easily accessible, we have consolidated these steps into a Jupyter notebook.   
+   
 
 **Repository for notebook implementation**
+
+However, to make this more accessible, we have consolidated these steps into a Jupyter notebook.
+
+Note:  As you will see in the notebook we have abstracted the process of fine tuning our model for the Transformer Universe trivia.  Instead you will have the generic GPT2 weights available to you for predicting the next word/token.  You will quickly notice how much knowledge it lacks on the Transformer Universe.   
 
 Cybertron-Interp/
 
