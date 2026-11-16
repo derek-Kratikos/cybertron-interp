@@ -66,7 +66,7 @@ Once captured, we perform two primary levels of inspection:
 
 By gathering these data points across all three components, we can see where attention was given by different layers, where the information was processed in the MLP, and how the overall residual stream traversed our network. This gives us a much better idea of how our input is impacting the network and where we can go to get more clarity.
 
-**Direct Logit Attribution & The Logit Lens**
+* **Direct Logit Attribution & The Logit Lens**
 
 The information that we can capture from the cosine visuals helps us see that the network is shifting and routing information, but the actual tensor if examined is still a 768-dimensional number and not something we can interpret.   This is where logit (i.e. output) attribution comes into play. 
 
