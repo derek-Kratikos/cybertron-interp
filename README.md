@@ -1,142 +1,131 @@
 # **Cybertron-Interp**
 
-**A mechanistic interpretability adventure exploring the *"more than meets the eye"* internals of a multi-head transformer** 
+**A mechanistic interpretability adventure exploring the *"more than meets the eye"* internals of a multi-head transformer**
 
-**Foreword**
+## **Foreword**
 
-This project grew out of studying transformer architectures and working with inspection code to trace how a 16-layer, 16-head network processes input text, routes information across attention heads, and forms predictions across its layers. The workflow here serves as a microcosm of the full coursework featured in the **ARENA** curriculum, which builds on **Neel Nanda's** mechanistic interpretability research.
+This project grew out of studying transformer architectures and working with inspection code to trace how a 12-layer, 12-head network processes input, routes information across attention heads, and forms predictions across its layers. The workflow here serves as a microcosm of the full coursework featured in the **ARENA** curriculum, which builds on **Neel Nanda's** mechanistic interpretability research.
 
-To make the exploration a bit more fun, this project uses a play on words: our test subject is a GPT-2 Small multi-head transformer fine-tuned on *Transformers* universe trivia (the media franchise trademarked by Hasbro, Inc.). By doing so, we were able to creatively probe prompts and observe how the base vocabulary and fine-tuning content (i.e., lore retrieval) merge during activation. 
+To make the exploration a bit more fun, this project uses a play on words: our test subject is a GPT-2 Small multi-head transformer fine-tuned on *Transformers* universe trivia (the franchise and toys trademarked by Hasbro, Inc.). By doing so, we were able to engage in fun dialog about characters and probe prompts and observe how the model's base vocabulary and fine-tuning content (i.e., lore retrieval) come together during activation.
 
-### **Workflow:**
+### **Workflow**
 
-As an abbreviated exploration inspired by the full ARENA coursework, this project focuses tightly on four key stages:
+We focused on 6 stages:
 
-* **Transformer Building & Fine-Tuning:** Building the model from ground zero and fine tuning it using information provided by the Transformers Wiki and other data sources   
+* **Stage 1 — Fine-Tuning:** Adapting GPT-2 Small using information provided by the Transformers Wiki and other lore data sources.
+* **Stage 2 — Attention Pattern Detection & Routing Analysis:** Inspecting how information moves and routes across specific layers and attention heads.
+* **Stage 3 — Activation Caching & Tensor Influencing:** Using custom PyTorch hooks to capture and manipulate internal state tensors.
+* **Stage 4 — Vector Visualizations & Analysis:** Displaying graphical representations of our model's attention and residual stream vectors for analysis.
+* **Stage 5 — Direct Logit Attribution & The Logit Lens:** Tracing token attributions and logit recovery directly from the residual stream.
+* **Stage 6 — Causal Intervention & Model Steering:** Looking at and intervening into internal activations to control and steer model outputs.
 
-* **Attention Pattern Detection & Routing Analysis:** Inspecting how information moves and routes across specific layers and attention heads.  
+> **Note:** Before starting the fine-tuning stage, there is a quick pre-stage exploration worth noting.
 
-* **Activation Caching & Tensor Influencing :** Using custom PyTorch hooks to capture and manipulate internal state tensors.  
+### Before the Fine-Tuning
 
-* **Direct Logit Extraction & Logit Analysis:** Tracing token attributions and logit recovery directly from intermediate residual streams.
+For entertainment, we first set up a model with random weights. Knowing it would fail to produce a coherent language response to any question, it served as a playful starting point.
 
-* **Transformer Building & Fine-Tuning**
+#### Inference Test 1
 
-We started by constructing our multi-head transformer architecture and configured its parameters to mirror the original 2019 OpenAI GPT-2 model specifications.
-
-That’s good, but the model started with random weights and biases, so the responses it provided to basic questions were wild. In fact, me and my son loved its one word response to my question, “Who is Optimus Prime?”
+We prompted: `"Optimus Prime is "`
 
 It responded: **Nar**
 
-Although entertaining, that wouldn’t work for us, so we then loaded OpenAI's official pre-trained weight configuration so the model could generate coherent and intelligible text. Now it knew who Optimus Prime was and explained that he was a Cybertronian and was the leader of the autobots.
+My son and I got a huge kick out of that, since that is a Gen Alpha way to say "No."
 
-Good, but not good enough as we need our model to be an expert level trivia snob. This was where we did our fine-tuning. Using the Transformers Wiki API we generated a lore data source with rich info about the Transformers Universe.
+Okay, so "Nar" wouldn't cut it—so we then loaded GPT-2's standard pre-trained weights from Hugging Face (`gpt2`).
 
-Using a built-in Nvidia GPU and PyTorch’s engagement of the CUDA library, we trained our model across 10 epochs on this data. Although the data was somewhat short, each epoch consisted of 350 batches.
+#### Inference Test 2
 
-After several minutes had passed our model was now ready to test and Yes\!  We were now getting  a Transformers Universe scholar level response on who was Optimus Prime.    
+We prompted: `"Optimus Prime is "`
 
-Now that we have our model working as desired, it was time to move onto our next phase.   
+It responded: **the leader of the autobots and is a Cybertronian**
 
-* **Attention Pattern Detection & Routing Analysis**
+This was much better, but it still wasn't the specialized knowledge we wanted to make this exercise meaningful to *Transformers* fans. That is where we decided to fine-tune the model.
 
-Before we can do mechanistic interpretability work, we need to determine how our input string is being processed by our neural network.   With the transformer architecture consisting of multiple attention heads, we were very interested in determining where our tokens end up.   
+### Stage 1: Fine-Tuning
 
-As an initial test, we want to make sure that our input string is getting converted into tokens and structured into a PyTorch tensor of the shape we expect using Hugging Face’s tokenizer. Next, we pass that tensor through the model to produce an attention tensor representing which heads in a given layer are activating for our specific input. To make these internal patterns concrete, we use **CircuitsVis** to render an interactive view of how each head responds to the input string.  Then to go a step deeper, we use seaborn to look at a particular head to see how the attention weights are reacting to each of the tokens of our input string such as shown below.  
+To give our model an edge on its *Transformers* knowledge, we tasked Claude Code with building us a corpus (`transformers_corpus_core.txt`) using various reliable resources on the web such as the Transformers Wiki.
 
-* **Activation Caching & Tensor Shape Management**
+Then, using an NVIDIA GPU and PyTorch's CUDA backend, we trained our model on the full lore dataset (2 epochs, 15,304 steps, saving weights locally to `./transformers_universe_weights`, also hosted on Hugging Face at [`dhanson5/cybertron-gpt2-lore`](https://huggingface.co/dhanson5/cybertron-gpt2-lore)). To keep the accompanying notebook lightweight and runnable anywhere, Stage 1 demonstrates the exact same training pipeline using `sample_corpus.txt` and saving to `./sample_transformers_weights`.
+
+#### Inference Test 3
+
+Now, when we prompted: `"Optimus Prime is "`
+
+It responded: **Optimus Prime is an Autobot from the Generation 1 continuity family**
+
+This has been shown to be a true canon response.
+
+Now, our model isn't perfect. It was caught saying things that sound very plausible—*"Optimus Prime was seeking the AllSpark in a cave, but was attacked by Shockwave"*—but were hallucinations. Either way, we were now getting an adequate response from our model to take the next steps.
+
+### Stage 2: Attention Pattern Detection & Routing Analysis
+
+Before we can do mechanistic interpretability work, we need to determine how our input string is being processed by our neural network. With the transformer architecture consisting of multiple attention heads, we were very interested in determining where our tokens end up.
+
+In this stage, we load the baseline `gpt2` model with `attn_implementation="eager"` so attention matrices are exposed, convert our prompt (`"Optimus Prime is "`) into subword tokens and PyTorch tensors using Hugging Face's tokenizer, and run a forward pass with `output_attentions=True` to inspect the resulting `[num_layers, batch, heads, q_pos, k_pos]` attention tensor alongside a baseline model generation.
+
+### Stage 3: Activation Caching & Tensor Influencing
 
 In this phase, we want to set up traps so the neural network **tensors** generated by PyTorch are captured for our analysis.
 
 To do this, there are 3 steps:
 
-1. We needed a place to put the data, so we created a Python dictionary.  
-2. We need to set up our information traps for the layers of interest in our transformer.  
-3. We need to have our model process our input string so that PyTorch can collect those outputs.
+1. Create a Python dictionary (`cache = {"resid": {}}`) to store the captured activations.
+2. Register PyTorch forward hooks across the transformer blocks (`model.transformer.h`) to intercept hidden states mid-pass.
+3. Run our model on the input string so PyTorch collects those outputs, then remove the hooks cleanly.
 
-And we need to do each of these 3 steps for attention (`.attn`), multi-layer perceptron (`.mlp`), and the **residual stream cache**.
+While this hook pattern works across attention (`.attn`), multi-layer perceptron (`.mlp`), and residual stream outputs, the notebook focuses on caching the residual stream at each layer and plotting cosine similarity relative to Layer 0 across layers `[3, 6, 9, 11]` to measure how token representations drift with depth.
 
-* **Vector Visualizations & Analysis**
+### Stage 4: Vector Visualizations & Analysis
 
-Once captured, we perform two primary levels of inspection:
+Once the tensors and attention weights are captured, we inspect how the network routes information across tokens. Using Seaborn, we render a visual heatmap for a specific attention head (**Layer 5, Head 9**) showing how each query token attends to source key tokens across our prompt.
 
-**Vector Evolution (Cosine Comparisons):** We analyze the cosine similarity between layers for each component to see which layers maintain alignment and where things shift.  
+### Stage 5: Direct Logit Attribution & The Logit Lens
 
-**Information Routing (Attention Heads):** We run an analysis showing where a given token leans in terms of attention weights across specific layers and heads.
+The information we capture from cosine visuals and heatmaps shows that the network is shifting and routing information, but an individual residual state is still a 768-dimensional vector and not directly human-readable. This is where the **Logit Lens** comes into play.
 
-By gathering these data points across all three components, we can see where attention was given by different layers, where the information was processed in the MLP, and how the overall residual stream traversed our network. This gives us a much better idea of how our input is impacting the network and where we can go to get more clarity.
+By passing each layer's cached residual state through the model's final layer norm (`ln_f`) and language modeling head (`lm_head`), we can decode what token the network is predicting at every intermediate layer—before it reaches the final output. We can run this inspection for any token index in our prompt; for example, the initial `'Opt'` token of `"Optimus"` initially predicts `'ical'` (as in *"optical"*) at Layer 0 before shifting its prediction across deeper layers.
 
-* **Direct Logit Attribution & The Logit Lens**
+### Stage 6: Causal Intervention & Model Steering
 
-The information that we can capture from the cosine visuals helps us see that the network is shifting and routing information, but the actual tensor if examined is still a 768-dimensional number and not something we can interpret.   This is where logit (i.e. output) attribution comes into play. 
+Up to this point we have observed how data is stored, routed, and decoded across layers—now we switch from observation to **causation**.
 
-To do this, we will hook into our residual stream by accessing the last state before it converts from tensors into human readable language to see which token it will predict next vs. seeing the actual output from the model that would be sent back to the user.  
+To understand *why* the model produces a given output, we can intervene directly in its internal activations during a forward pass:
 
-We can run this task for any of the token indexes so we can see that same predictions for any part of our 8 token input string.  In our example we learn that the token of Opt as in Optimus is predicted to be likely “ical” to form optical
+* **Activation Patching:** We capture the Layer 9 residual activation from a clean prompt (`"Optimus Prime is the commander of the"`) and patch it into the final token position of a corrupted prompt (`"Megatron is the leader of the"`), observing how the model's next-token prediction flips (`' Autob'`).
+* **Steering Vectors & Mid-Flight Manipulation:** We extract a concept difference vector at Layer 9 (`"Optimus Prime is the leader of the"` minus `"Megatron is the leader of the"`) and add `alpha * steering_vector` into the residual stream while generating from an unrelated prompt (`"The giant alien robot transformed into a truck and said,"`), steering the continuation in real time.
 
-* **Causal Intervention & Model Steering**
+Although not exhaustive, interventions like these demonstrate how manipulating internal representations directly alters model behavior.
 
-To this point we’ve been able to extract info on how the data in the neural network is being stored and we’ve seen how we can capture information and how we can convert it into human readable language, but this is one of the most exciting steps in the process. We’re going to examine how an input string can be manipulated and see how our neural network will process it naturally.  
+### Repository Structure for Local Implementation
 
-Previously we did observation steps, but now we need to switch to causation.
+If you prefer to organize this project into modular Python scripts locally, you can use the following structure:
 
-Great that we can see how and where it thinks, but we want to understand why it thinks that.  With the exception of asking the model, why it did that, one way for us to find out what makes it tick is by controlling its information flow.  By injecting information into its network that should not be there we can watch how it reacts and processes the information.  By doing this we can also control its actions.   
-
-Options for doing this: 
-
-**Activation Patching** 
-
-Then, let’s suppose our model says Ironhide is one of the dinobots.  That’s wrong.  Instead of having our model sound foolish to its user, we can push the correct response through the neural network pipes so the response is well received.
-
-**Steering Vectors & Mid-Flight Manipulation**
-
-We can inject or add a vector representing a specific concept into the residual stream, forcing the model to process it naturally and alter its final destination.
-
-**Proving the Why**
-
-Although not conclusive, using actions like these we are able to show that we can manipulate the system and alter the output which is steps away from knowing why it answered a question in a certain way.    And that is by far the most challenging pursuit of researchers.  
-
-**Repository Structure for local implementation**
-
-For the structure of this project if you were to install it locally, I would suggest the following structure.  
-
+```text
 Cybertron-Interp/
+├── README.md                 # Conceptual walk-through and chapter guide
+├── requirements.txt          # Minimal dependency definitions
+├── data/
+│   └── wiki_lore_corpus.json # Lore data extracted from Transformers Wiki
+├── models/
+│   └── fine_tuned_gpt2/      # Fine-tuned weights and configuration checkpoints
+└── src/                      # Modular Python source code
+    ├── __init__.py
+    ├── model_setup.py        # Architecture config & weight loading
+    ├── hook_caching.py       # Activation traps & tensor extraction
+    ├── logit_lens.py         # Residual stream decoding & token attribution
+    └── intervention.py       # Activation patching & steering vectors
+```
 
-├── README.md                \# Conceptual walk-through and chapter guide
+### Repository for Notebook Implementation
 
-├── requirements.txt         \# Minimal dependency definitions
+To make the entire workflow accessible in one place, all 6 stages are consolidated into a single Jupyter notebook. Stage 1 runs a fast sample fine-tuning pass using `sample_corpus.txt` (with full fine-tuned weights available on Hugging Face at `dhanson5/cybertron-gpt2-lore`), while Stages 2–6 use baseline `gpt2` weights so you can clearly see where general pre-trained knowledge ends and targeted mechanistic interpretability begins.
 
-├── data/                    
-
-│   └── wiki\_lore\_corpus.json \# Lore data extracted from Transformers Wiki
-
-├── models/                  
-
-│   └── fine\_tuned\_gpt2/     \# Fine-tuned weights and configuration checkpoints
-
-└── src/                     \# Modular Python source code
-
-    ├── \_\_init\_\_.py          
-
-    ├── model\_setup.py       \# Architecture config & weight loading
-
-    ├── hook\_caching.py      \# Activation traps & tensor extraction
-
-    ├── logit\_lens.py        \# Residual stream decoding & token attribution
-
-    └── intervention.py      \# Activation patching & steering vectors
-   
-
-**Repository for notebook implementation**
-
-However, to make this more accessible, we have consolidated these steps into a Jupyter notebook.
-
-Note:  As you will see in the notebook we have abstracted the process of fine tuning our model for the Transformer Universe trivia.  Instead you will have the generic GPT2 weights available to you for predicting the next word/token.  You will quickly notice how much knowledge it lacks on the Transformer Universe.   
-
+```text
 Cybertron-Interp/
-
-├── README.md               \# Conceptual walk-through and chapter guide
-
-├── requirements.txt        \# Minimal dependencies (torch, transformers, transformer\_lens, circuitsvis, seaborn)
-
-└── cybertron\_interp.ipynb  \# End-to-end interactive notebook (Model setup, hook caching, Logit Lens, and Causal Steering)
+├── README.md               # Conceptual walk-through and chapter guide
+├── requirements.txt        # Dependencies (torch, transformers, datasets, matplotlib, seaborn, circuitsvis)
+├── sample_corpus.txt       # Lightweight Transformers lore corpus for Stage 1
+└── cybertron_interp.ipynb  # End-to-end interactive notebook (Fine-tuning, attention routing, caching, Logit Lens, and steering)
+```
